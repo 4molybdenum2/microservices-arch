@@ -15,38 +15,43 @@ import (
 	"os"
 	"os/signal"
 	"time"
-    "github.com/4molybdenum2/rest-api/handlers"
+    "github.com/4molybdenum2/microservices-arch/handlers"
 )
 
 func main() {
-    l := log.New(os.Stdout, "rest-api", log.LstdFlags)
+    l := log.New(os.Stdout, "products-api", log.LstdFlags)
     hh := handlers.SayHello(l)
+    ph := handlers.NewProducts(l)
 
     sm := http.NewServeMux()
 
     sm.Handle("/", hh)
+    sm.Handle("/products", ph)
 
     server := &http.Server{
         Addr: ":8001",
         Handler: sm,
+        ErrorLog: l,
         IdleTimeout: 120 * time.Second,
         ReadTimeout: 1 * time.Second,
         WriteTimeout: 1 * time.Second,
     }
     
     go func() {
+        l.Println("Starting server on PORT: 8001")
         err := server.ListenAndServe()
         if err != nil{
-            l.Fatal(err)
+            l.Printf("Error starting server %s\n", err)
+            os.Exit(1)
         }
     }()
 
-    sigChannel := make(chan os.Signal)
+    sigChannel := make(chan os.Signal, 1)
     signal.Notify(sigChannel, os.Interrupt)
     signal.Notify(sigChannel, os.Kill)
 
     sig := <- sigChannel
     l.Println("Graceful Shutdonwn", sig)
-    tc, _ := context.WithTimeout(context.Background(), 30*time.Second)
-    server.Shutdown(tc)
+    ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
+    server.Shutdown(ctx)
 }
