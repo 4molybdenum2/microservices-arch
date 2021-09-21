@@ -85,8 +85,6 @@ func (p *Products) addProducts(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	data.AddProduct(prod)
-
-	p.l.Println("Prod: %#v", prod)
 }
 
 func (p Products) updateProducts(id int, rw http.ResponseWriter, r*http.Request) {
